@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { DevicesModule } from './devices/devices.module';
 import { AnimalsModule } from './animals/animals.module';
 import { FencesModule } from './fences/fences.module';
+import { ElevationModule } from './elevation/elevation.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { FencesModule } from './fences/fences.module';
     DevicesModule,
     AnimalsModule,
     FencesModule,
+    ElevationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

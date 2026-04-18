@@ -15,6 +15,7 @@ const auth_module_1 = require("./auth/auth.module");
 const devices_module_1 = require("./devices/devices.module");
 const animals_module_1 = require("./animals/animals.module");
 const fences_module_1 = require("./fences/fences.module");
+const elevation_module_1 = require("./elevation/elevation.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -34,6 +35,7 @@ exports.AppModule = AppModule = __decorate([
             devices_module_1.DevicesModule,
             animals_module_1.AnimalsModule,
             fences_module_1.FencesModule,
+            elevation_module_1.ElevationModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
