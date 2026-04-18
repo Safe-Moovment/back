@@ -5,26 +5,39 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DevicesService = void 0;
 const common_1 = require("@nestjs/common");
+const mongoose_1 = require("@nestjs/mongoose");
+const mongoose_2 = require("mongoose");
 const health_biometric_mock_1 = require("../mocks/health-biometric.mock");
+const device_schema_1 = require("./schemas/device.schema");
 let DevicesService = class DevicesService {
-    devices = new Map();
-    list() {
-        return Array.from(this.devices.values()).map((record) => this.toDeviceView(record));
+    deviceModel;
+    constructor(deviceModel) {
+        this.deviceModel = deviceModel;
     }
-    create(payload) {
+    async list() {
+        const rows = await this.deviceModel.find().sort({ updatedAt: -1 }).lean();
+        return rows.map((row) => this.toDeviceView(row));
+    }
+    async create(payload) {
         const id = this.requireString(payload.id, 'id');
-        if (this.devices.has(id)) {
-            throw new common_1.BadRequestException(`Device ${id} already exists`);
+        if (await this.deviceModel.exists({ id })) {
+            throw new common_1.ConflictException(`Device ${id} already exists`);
         }
-        const record = this.buildRecord(payload);
-        this.devices.set(id, record);
-        return this.toDeviceView(record);
+        const record = this.buildRecord({ ...payload, id });
+        const created = await this.deviceModel.create(record);
+        return this.toDeviceView(created.toObject());
     }
-    update(id, payload) {
-        const current = this.devices.get(id);
+    async update(id, payload) {
+        const current = await this.deviceModel.findOne({ id }).lean();
         if (!current) {
             throw new common_1.NotFoundException(`Device ${id} was not found`);
         }
@@ -32,9 +45,15 @@ let DevicesService = class DevicesService {
             ...this.toDeviceView(current),
             ...payload,
             id,
+            lastPing: new Date().toISOString(),
         };
-        const updated = this.buildRecord(mergedPayload);
-        this.devices.set(id, updated);
+        const updatedRecord = this.buildRecord(mergedPayload);
+        const updated = await this.deviceModel
+            .findOneAndUpdate({ id }, updatedRecord, { new: true })
+            .lean();
+        if (!updated) {
+            throw new common_1.NotFoundException(`Device ${id} was not found`);
+        }
         return this.toDeviceView(updated);
     }
     buildRecord(payload) {
@@ -49,7 +68,7 @@ let DevicesService = class DevicesService {
         const lastSyncMode = this.requireSyncMode(payload.lastSyncMode, 'lastSyncMode');
         const gatewayId = this.requireString(payload.gatewayId, 'gatewayId');
         const alertsCount = this.requireNumber(payload.alertsCount, 'alertsCount');
-        const telemetry = (0, health_biometric_mock_1.createDeviceTelemetryData)({
+        (0, health_biometric_mock_1.createDeviceTelemetryData)({
             device_id: id,
             hardware_version: hardwareVersion,
             battery: {
@@ -66,34 +85,39 @@ let DevicesService = class DevicesService {
             alerts_count: alertsCount,
         });
         return {
+            id,
             animalId,
-            telemetry,
-            lastPing: new Date().toISOString(),
+            battery: batteryLevel,
+            signal: signalPercent,
+            status,
+            lastPing: this.requireDate(payload.lastPing, 'lastPing'),
+            hardwareVersion,
+            solarCharging,
+            protocol,
+            lastSyncMode,
+            gatewayId,
+            alertsCount,
         };
     }
-    toDeviceView(record) {
+    toDeviceView(row) {
         return {
-            id: record.telemetry.device_id,
-            animalId: record.animalId,
-            battery: record.telemetry.battery.level,
-            signal: this.rssiToSignalPercent(record.telemetry.connectivity.rssi),
-            status: this.mapBatteryToStatus(record.telemetry.battery.status),
-            lastPing: record.lastPing,
-            hardwareVersion: record.telemetry.hardware_version,
-            solarCharging: record.telemetry.battery.solar_charging,
-            protocol: record.telemetry.connectivity.protocol,
-            lastSyncMode: record.telemetry.connectivity.last_sync_mode,
-            gatewayId: record.telemetry.connectivity.gateway_id,
-            alertsCount: record.telemetry.alerts_count,
+            id: row.id,
+            animalId: row.animalId,
+            battery: row.battery,
+            signal: row.signal,
+            status: row.status,
+            lastPing: new Date(row.lastPing).toISOString(),
+            hardwareVersion: row.hardwareVersion,
+            solarCharging: row.solarCharging,
+            protocol: row.protocol,
+            lastSyncMode: row.lastSyncMode,
+            gatewayId: row.gatewayId,
+            alertsCount: row.alertsCount,
         };
     }
     signalPercentToRssi(signalPercent) {
         const normalized = Math.max(0, Math.min(100, signalPercent));
         return Math.round(-120 + normalized * 0.7);
-    }
-    rssiToSignalPercent(rssi) {
-        const raw = Math.round(((rssi + 120) / 70) * 100);
-        return Math.max(0, Math.min(100, raw));
     }
     mapStatusToBattery(status) {
         if (status === 'critical') {
@@ -103,15 +127,6 @@ let DevicesService = class DevicesService {
             return 'low';
         }
         return 'normal';
-    }
-    mapBatteryToStatus(status) {
-        if (status === 'critical') {
-            return 'critical';
-        }
-        if (status === 'low') {
-            return 'warning';
-        }
-        return 'active';
     }
     requireString(value, field) {
         if (typeof value !== 'string' || !value.trim()) {
@@ -124,6 +139,16 @@ let DevicesService = class DevicesService {
             throw new common_1.BadRequestException(`Field ${field} must be a valid number`);
         }
         return value;
+    }
+    requireDate(value, field) {
+        if (typeof value !== 'string') {
+            throw new common_1.BadRequestException(`Field ${field} must be a valid ISO date string`);
+        }
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            throw new common_1.BadRequestException(`Field ${field} must be a valid ISO date string`);
+        }
+        return parsed;
     }
     requireStatus(value, field) {
         if (value === 'active' || value === 'warning' || value === 'critical') {
@@ -152,6 +177,8 @@ let DevicesService = class DevicesService {
 };
 exports.DevicesService = DevicesService;
 exports.DevicesService = DevicesService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __param(0, (0, mongoose_1.InjectModel)(device_schema_1.Device.name)),
+    __metadata("design:paramtypes", [mongoose_2.Model])
 ], DevicesService);
 //# sourceMappingURL=devices.service.js.map

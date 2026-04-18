@@ -14,8 +14,8 @@ type AnimalView = {
 export declare class AnimalsController {
     private readonly animalsService;
     constructor(animalsService: AnimalsService);
-    list(): AnimalView[];
-    create(payload: Partial<AnimalView>): AnimalView;
-    update(id: string, payload: Partial<Omit<AnimalView, 'id'>>): AnimalView;
+    list(): Promise<AnimalView[]>;
+    create(payload: Partial<AnimalView>): Promise<AnimalView>;
+    update(id: string, payload: Partial<Omit<AnimalView, 'id'>>): Promise<AnimalView>;
 }
 export {};

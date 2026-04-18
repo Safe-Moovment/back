@@ -21,20 +21,20 @@ export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
   @Get()
-  list(): DeviceView[] {
-    return this.devicesService.list();
+  async list(): Promise<DeviceView[]> {
+    return await this.devicesService.list();
   }
 
   @Post()
-  create(@Body() payload: Partial<DeviceView>): DeviceView {
-    return this.devicesService.create(payload);
+  async create(@Body() payload: Partial<DeviceView>): Promise<DeviceView> {
+    return await this.devicesService.create(payload);
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() payload: Partial<Omit<DeviceView, 'id'>>,
-  ): DeviceView {
-    return this.devicesService.update(id, payload);
+  ): Promise<DeviceView> {
+    return await this.devicesService.update(id, payload);
   }
 }

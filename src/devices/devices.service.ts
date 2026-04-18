@@ -1,8 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import {
   createDeviceTelemetryData,
   DeviceTelemetryMock,
 } from '../mocks/health-biometric.mock';
+import { Device } from './schemas/device.schema';
 
 type DeviceStatus = 'active' | 'warning' | 'critical';
 
@@ -21,39 +29,35 @@ type DeviceView = {
   alertsCount: number;
 };
 
-type DeviceRecord = {
-  animalId: string;
-  telemetry: DeviceTelemetryMock;
-  lastPing: string;
-};
-
 type DeviceUpsertPayload = Partial<DeviceView>;
 
 @Injectable()
 export class DevicesService {
-  private readonly devices = new Map<string, DeviceRecord>();
+  constructor(
+    @InjectModel(Device.name)
+    private readonly deviceModel: Model<Device>,
+  ) {}
 
-  list(): DeviceView[] {
-    return Array.from(this.devices.values()).map((record) =>
-      this.toDeviceView(record),
-    );
+  async list(): Promise<DeviceView[]> {
+    const rows = await this.deviceModel.find().sort({ updatedAt: -1 }).lean();
+    return rows.map((row) => this.toDeviceView(row));
   }
 
-  create(payload: DeviceUpsertPayload): DeviceView {
+  async create(payload: DeviceUpsertPayload): Promise<DeviceView> {
     const id = this.requireString(payload.id, 'id');
 
-    if (this.devices.has(id)) {
-      throw new BadRequestException(`Device ${id} already exists`);
+    if (await this.deviceModel.exists({ id })) {
+      throw new ConflictException(`Device ${id} already exists`);
     }
 
-    const record = this.buildRecord(payload);
-    this.devices.set(id, record);
+    const record = this.buildRecord({ ...payload, id });
+    const created = await this.deviceModel.create(record);
 
-    return this.toDeviceView(record);
+    return this.toDeviceView(created.toObject());
   }
 
-  update(id: string, payload: DeviceUpsertPayload): DeviceView {
-    const current = this.devices.get(id);
+  async update(id: string, payload: DeviceUpsertPayload): Promise<DeviceView> {
+    const current = await this.deviceModel.findOne({ id }).lean();
     if (!current) {
       throw new NotFoundException(`Device ${id} was not found`);
     }
@@ -62,15 +66,23 @@ export class DevicesService {
       ...this.toDeviceView(current),
       ...payload,
       id,
+      lastPing: new Date().toISOString(),
     };
 
-    const updated = this.buildRecord(mergedPayload);
-    this.devices.set(id, updated);
+    const updatedRecord = this.buildRecord(mergedPayload);
+
+    const updated = await this.deviceModel
+      .findOneAndUpdate({ id }, updatedRecord, { new: true })
+      .lean();
+
+    if (!updated) {
+      throw new NotFoundException(`Device ${id} was not found`);
+    }
 
     return this.toDeviceView(updated);
   }
 
-  private buildRecord(payload: DeviceUpsertPayload): DeviceRecord {
+  private buildRecord(payload: DeviceUpsertPayload): Omit<Device, 'createdAt' | 'updatedAt'> {
     const id = this.requireString(payload.id, 'id');
     const batteryLevel = this.requireNumber(payload.battery, 'battery');
     const signalPercent = this.requireNumber(payload.signal, 'signal');
@@ -92,7 +104,7 @@ export class DevicesService {
     const gatewayId = this.requireString(payload.gatewayId, 'gatewayId');
     const alertsCount = this.requireNumber(payload.alertsCount, 'alertsCount');
 
-    const telemetry = createDeviceTelemetryData({
+    createDeviceTelemetryData({
       device_id: id,
       hardware_version: hardwareVersion,
       battery: {
@@ -110,26 +122,48 @@ export class DevicesService {
     });
 
     return {
+      id,
       animalId,
-      telemetry,
-      lastPing: new Date().toISOString(),
-    };
+      battery: batteryLevel,
+      signal: signalPercent,
+      status,
+      lastPing: this.requireDate(payload.lastPing, 'lastPing'),
+      hardwareVersion,
+      solarCharging,
+      protocol,
+      lastSyncMode,
+      gatewayId,
+      alertsCount,
+    } as Omit<Device, 'createdAt' | 'updatedAt'>;
   }
 
-  private toDeviceView(record: DeviceRecord): DeviceView {
+  private toDeviceView(row: {
+    id: string;
+    animalId: string;
+    battery: number;
+    signal: number;
+    status: DeviceStatus;
+    lastPing: Date;
+    hardwareVersion: string;
+    solarCharging: boolean;
+    protocol: 'LoRaWAN' | 'LTE' | 'NB-IoT';
+    lastSyncMode: 'Store & Forward' | 'Real-time';
+    gatewayId: string;
+    alertsCount: number;
+  }): DeviceView {
     return {
-      id: record.telemetry.device_id,
-      animalId: record.animalId,
-      battery: record.telemetry.battery.level,
-      signal: this.rssiToSignalPercent(record.telemetry.connectivity.rssi),
-      status: this.mapBatteryToStatus(record.telemetry.battery.status),
-      lastPing: record.lastPing,
-      hardwareVersion: record.telemetry.hardware_version,
-      solarCharging: record.telemetry.battery.solar_charging,
-      protocol: record.telemetry.connectivity.protocol,
-      lastSyncMode: record.telemetry.connectivity.last_sync_mode,
-      gatewayId: record.telemetry.connectivity.gateway_id,
-      alertsCount: record.telemetry.alerts_count,
+      id: row.id,
+      animalId: row.animalId,
+      battery: row.battery,
+      signal: row.signal,
+      status: row.status,
+      lastPing: new Date(row.lastPing).toISOString(),
+      hardwareVersion: row.hardwareVersion,
+      solarCharging: row.solarCharging,
+      protocol: row.protocol,
+      lastSyncMode: row.lastSyncMode,
+      gatewayId: row.gatewayId,
+      alertsCount: row.alertsCount,
     };
   }
 
@@ -138,12 +172,9 @@ export class DevicesService {
     return Math.round(-120 + normalized * 0.7);
   }
 
-  private rssiToSignalPercent(rssi: number): number {
-    const raw = Math.round(((rssi + 120) / 70) * 100);
-    return Math.max(0, Math.min(100, raw));
-  }
-
-  private mapStatusToBattery(status: DeviceStatus): DeviceTelemetryMock['battery']['status'] {
+  private mapStatusToBattery(
+    status: DeviceStatus,
+  ): DeviceTelemetryMock['battery']['status'] {
     if (status === 'critical') {
       return 'critical';
     }
@@ -151,16 +182,6 @@ export class DevicesService {
       return 'low';
     }
     return 'normal';
-  }
-
-  private mapBatteryToStatus(status: DeviceTelemetryMock['battery']['status']): DeviceStatus {
-    if (status === 'critical') {
-      return 'critical';
-    }
-    if (status === 'low') {
-      return 'warning';
-    }
-    return 'active';
   }
 
   private requireString(value: unknown, field: string): string {
@@ -175,6 +196,17 @@ export class DevicesService {
       throw new BadRequestException(`Field ${field} must be a valid number`);
     }
     return value;
+  }
+
+  private requireDate(value: unknown, field: string): Date {
+    if (typeof value !== 'string') {
+      throw new BadRequestException(`Field ${field} must be a valid ISO date string`);
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException(`Field ${field} must be a valid ISO date string`);
+    }
+    return parsed;
   }
 
   private requireStatus(value: unknown, field: string): DeviceStatus {
@@ -200,7 +232,9 @@ export class DevicesService {
     if (value === 'LoRaWAN' || value === 'LTE' || value === 'NB-IoT') {
       return value;
     }
-    throw new BadRequestException(`Field ${field} must be LoRaWAN, LTE or NB-IoT`);
+    throw new BadRequestException(
+      `Field ${field} must be LoRaWAN, LTE or NB-IoT`,
+    );
   }
 
   private requireSyncMode(

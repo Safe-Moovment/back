@@ -1,3 +1,5 @@
+import { Model } from 'mongoose';
+import { Device } from './schemas/device.schema';
 type DeviceStatus = 'active' | 'warning' | 'critical';
 type DeviceView = {
     id: string;
@@ -15,18 +17,18 @@ type DeviceView = {
 };
 type DeviceUpsertPayload = Partial<DeviceView>;
 export declare class DevicesService {
-    private readonly devices;
-    list(): DeviceView[];
-    create(payload: DeviceUpsertPayload): DeviceView;
-    update(id: string, payload: DeviceUpsertPayload): DeviceView;
+    private readonly deviceModel;
+    constructor(deviceModel: Model<Device>);
+    list(): Promise<DeviceView[]>;
+    create(payload: DeviceUpsertPayload): Promise<DeviceView>;
+    update(id: string, payload: DeviceUpsertPayload): Promise<DeviceView>;
     private buildRecord;
     private toDeviceView;
     private signalPercentToRssi;
-    private rssiToSignalPercent;
     private mapStatusToBattery;
-    private mapBatteryToStatus;
     private requireString;
     private requireNumber;
+    private requireDate;
     private requireStatus;
     private requireBoolean;
     private requireProtocol;

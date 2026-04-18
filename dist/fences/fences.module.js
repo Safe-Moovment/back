@@ -6,22 +6,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DevicesModule = void 0;
+exports.FencesModule = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
-const devices_controller_1 = require("./devices.controller");
-const devices_service_1 = require("./devices.service");
-const device_schema_1 = require("./schemas/device.schema");
-let DevicesModule = class DevicesModule {
+const fences_controller_1 = require("./fences.controller");
+const fences_service_1 = require("./fences.service");
+const fence_schema_1 = require("./schemas/fence.schema");
+let FencesModule = class FencesModule {
 };
-exports.DevicesModule = DevicesModule;
-exports.DevicesModule = DevicesModule = __decorate([
+exports.FencesModule = FencesModule;
+exports.FencesModule = FencesModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            mongoose_1.MongooseModule.forFeature([{ name: device_schema_1.Device.name, schema: device_schema_1.DeviceSchema }]),
-        ],
-        controllers: [devices_controller_1.DevicesController],
-        providers: [devices_service_1.DevicesService],
+        imports: [mongoose_1.MongooseModule.forFeature([{ name: fence_schema_1.Fence.name, schema: fence_schema_1.FenceSchema }])],
+        controllers: [fences_controller_1.FencesController],
+        providers: [fences_service_1.FencesService],
     })
-], DevicesModule);
-//# sourceMappingURL=devices.module.js.map
+], FencesModule);
+//# sourceMappingURL=fences.module.js.map

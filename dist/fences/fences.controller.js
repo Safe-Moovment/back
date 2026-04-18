@@ -12,38 +12,41 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DevicesController = void 0;
+exports.FencesController = void 0;
 const common_1 = require("@nestjs/common");
-const devices_service_1 = require("./devices.service");
-let DevicesController = class DevicesController {
-    devicesService;
-    constructor(devicesService) {
-        this.devicesService = devicesService;
+const fences_service_1 = require("./fences.service");
+let FencesController = class FencesController {
+    fencesService;
+    constructor(fencesService) {
+        this.fencesService = fencesService;
     }
     async list() {
-        return await this.devicesService.list();
+        return await this.fencesService.list();
     }
     async create(payload) {
-        return await this.devicesService.create(payload);
+        return await this.fencesService.create(payload);
     }
     async update(id, payload) {
-        return await this.devicesService.update(id, payload);
+        return await this.fencesService.update(id, payload);
+    }
+    async remove(id) {
+        return await this.fencesService.remove(id);
     }
 };
-exports.DevicesController = DevicesController;
+exports.FencesController = FencesController;
 __decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
-], DevicesController.prototype, "list", null);
+], FencesController.prototype, "list", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], DevicesController.prototype, "create", null);
+], FencesController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
     __param(0, (0, common_1.Param)('id')),
@@ -51,9 +54,16 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
-], DevicesController.prototype, "update", null);
-exports.DevicesController = DevicesController = __decorate([
-    (0, common_1.Controller)('devices'),
-    __metadata("design:paramtypes", [devices_service_1.DevicesService])
-], DevicesController);
-//# sourceMappingURL=devices.controller.js.map
+], FencesController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], FencesController.prototype, "remove", null);
+exports.FencesController = FencesController = __decorate([
+    (0, common_1.Controller)('fences'),
+    __metadata("design:paramtypes", [fences_service_1.FencesService])
+], FencesController);
+//# sourceMappingURL=fences.controller.js.map

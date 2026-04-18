@@ -20,14 +20,14 @@ let AnimalsController = class AnimalsController {
     constructor(animalsService) {
         this.animalsService = animalsService;
     }
-    list() {
-        return this.animalsService.list();
+    async list() {
+        return await this.animalsService.list();
     }
-    create(payload) {
-        return this.animalsService.create(payload);
+    async create(payload) {
+        return await this.animalsService.create(payload);
     }
-    update(id, payload) {
-        return this.animalsService.update(id, payload);
+    async update(id, payload) {
+        return await this.animalsService.update(id, payload);
     }
 };
 exports.AnimalsController = AnimalsController;
@@ -35,14 +35,14 @@ __decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Array)
+    __metadata("design:returntype", Promise)
 ], AnimalsController.prototype, "list", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", Promise)
 ], AnimalsController.prototype, "create", null);
 __decorate([
     (0, common_1.Patch)(':id'),
@@ -50,7 +50,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", Promise)
 ], AnimalsController.prototype, "update", null);
 exports.AnimalsController = AnimalsController = __decorate([
     (0, common_1.Controller)('animals'),

@@ -1,3 +1,5 @@
+import { Model } from 'mongoose';
+import { Animal } from './schemas/animal.schema';
 type AnimalHealth = 'Excelente' | 'Buena' | 'Atención' | 'Alerta';
 type AnimalStatus = 'ok' | 'alert';
 type AnimalView = {
@@ -14,13 +16,16 @@ type AnimalView = {
 };
 type AnimalUpsertPayload = Partial<AnimalView>;
 export declare class AnimalsService {
-    private readonly animals;
-    list(): AnimalView[];
-    create(payload: AnimalUpsertPayload): AnimalView;
-    update(id: string, payload: AnimalUpsertPayload): AnimalView;
-    private toAnimal;
+    private readonly animalModel;
+    constructor(animalModel: Model<Animal>);
+    list(): Promise<AnimalView[]>;
+    create(payload: AnimalUpsertPayload): Promise<AnimalView>;
+    update(id: string, payload: AnimalUpsertPayload): Promise<AnimalView>;
+    private toView;
+    private buildAnimalRecord;
     private requireString;
     private requireNumber;
+    private requireDate;
     private requireHealth;
     private requireStatus;
 }

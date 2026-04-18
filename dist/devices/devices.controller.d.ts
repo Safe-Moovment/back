@@ -16,8 +16,8 @@ type DeviceView = {
 export declare class DevicesController {
     private readonly devicesService;
     constructor(devicesService: DevicesService);
-    list(): DeviceView[];
-    create(payload: Partial<DeviceView>): DeviceView;
-    update(id: string, payload: Partial<Omit<DeviceView, 'id'>>): DeviceView;
+    list(): Promise<DeviceView[]>;
+    create(payload: Partial<DeviceView>): Promise<DeviceView>;
+    update(id: string, payload: Partial<Omit<DeviceView, 'id'>>): Promise<DeviceView>;
 }
 export {};
