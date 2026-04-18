@@ -31,6 +31,16 @@
 $ pnpm install
 ```
 
+## Email setup
+
+Create a `.env` file in `back/` using the values from `.env.example`. The backend loads it automatically at startup. For Gmail SMTP, use the Google app password, not the normal account password.
+
+Required database variable:
+
+```env
+MONGODB_URI=mongodb+srv://<usuario>:<password>@back.kdo5oiu.mongodb.net/Back
+```
+
 ## Compile and run the project
 
 ```bash
