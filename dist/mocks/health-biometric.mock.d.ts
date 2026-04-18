@@ -38,5 +38,23 @@ export interface DeviceTelemetryMock {
     connectivity: DeviceConnectivity;
     alerts_count: number;
 }
-export declare const healthBiometricMock: HealthBiometricMock;
-export declare const deviceTelemetryMock: DeviceTelemetryMock;
+export interface GeoPoint {
+    lat: number;
+    lng: number;
+}
+export interface TerrainRiskPoint {
+    coordinate: GeoPoint;
+    elevation_m: number;
+    slope_degree: number;
+    risk_type: "steep_slope" | "flood_zone" | "unstable_ground";
+    action: "audio_stimulus" | "reroute" | "human_review";
+}
+export interface FenceRiskMock {
+    fence_id: string;
+    status: "active" | "inactive";
+    geofence_polygon: GeoPoint[];
+    terrain_risk_map: TerrainRiskPoint[];
+}
+export declare function createHealthBiometricData(payload: Partial<HealthBiometricMock>): HealthBiometricMock;
+export declare function createDeviceTelemetryData(payload: Partial<DeviceTelemetryMock>): DeviceTelemetryMock;
+export declare function createFenceRiskData(payload: Partial<FenceRiskMock>): FenceRiskMock;
