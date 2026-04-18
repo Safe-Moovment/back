@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.healthBiometricMock = void 0;
+exports.deviceTelemetryMock = exports.healthBiometricMock = void 0;
 exports.healthBiometricMock = {
     animal_id: "COW-042",
     tag_name: "Bessie",
@@ -20,5 +20,21 @@ exports.healthBiometricMock = {
     },
     his_score: 28,
     status: "critical",
+};
+exports.deviceTelemetryMock = {
+    device_id: "LORA-7782",
+    hardware_version: "V3-Solar",
+    battery: {
+        level: 15,
+        status: "critical",
+        solar_charging: false,
+    },
+    connectivity: {
+        protocol: "LoRaWAN",
+        rssi: -115,
+        last_sync_mode: "Store & Forward",
+        gateway_id: "BASE-STATION-01",
+    },
+    alerts_count: 3,
 };
 //# sourceMappingURL=health-biometric.mock.js.map

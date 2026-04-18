@@ -23,6 +23,27 @@ export interface HealthBiometricMock {
   status: "critical" | "warning" | "stable";
 }
 
+export interface DeviceBattery {
+  level: number;
+  status: "critical" | "low" | "normal";
+  solar_charging: boolean;
+}
+
+export interface DeviceConnectivity {
+  protocol: "LoRaWAN" | "LTE" | "NB-IoT";
+  rssi: number;
+  last_sync_mode: "Store & Forward" | "Real-time";
+  gateway_id: string;
+}
+
+export interface DeviceTelemetryMock {
+  device_id: string;
+  hardware_version: string;
+  battery: DeviceBattery;
+  connectivity: DeviceConnectivity;
+  alerts_count: number;
+}
+
 export const healthBiometricMock: HealthBiometricMock = {
   animal_id: "COW-042",
   tag_name: "Bessie",
@@ -42,4 +63,21 @@ export const healthBiometricMock: HealthBiometricMock = {
   },
   his_score: 28,
   status: "critical",
+};
+
+export const deviceTelemetryMock: DeviceTelemetryMock = {
+  device_id: "LORA-7782",
+  hardware_version: "V3-Solar",
+  battery: {
+    level: 15,
+    status: "critical",
+    solar_charging: false,
+  },
+  connectivity: {
+    protocol: "LoRaWAN",
+    rssi: -115,
+    last_sync_mode: "Store & Forward",
+    gateway_id: "BASE-STATION-01",
+  },
+  alerts_count: 3,
 };

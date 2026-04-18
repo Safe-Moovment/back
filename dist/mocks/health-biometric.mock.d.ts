@@ -20,4 +20,23 @@ export interface HealthBiometricMock {
     his_score: number;
     status: "critical" | "warning" | "stable";
 }
+export interface DeviceBattery {
+    level: number;
+    status: "critical" | "low" | "normal";
+    solar_charging: boolean;
+}
+export interface DeviceConnectivity {
+    protocol: "LoRaWAN" | "LTE" | "NB-IoT";
+    rssi: number;
+    last_sync_mode: "Store & Forward" | "Real-time";
+    gateway_id: string;
+}
+export interface DeviceTelemetryMock {
+    device_id: string;
+    hardware_version: string;
+    battery: DeviceBattery;
+    connectivity: DeviceConnectivity;
+    alerts_count: number;
+}
 export declare const healthBiometricMock: HealthBiometricMock;
+export declare const deviceTelemetryMock: DeviceTelemetryMock;
